@@ -22,16 +22,16 @@ public class WebScraper {
     init(args[0]);
     // while searchList != empty and set < MAX_URLS
     // --get next from searchList and get more urls
-    //while end
-    //print first MAX_URLS urls
+    // while end
+    // print first MAX_URLS urls
 
     try {
       String startUrl = args[0];
       URL url = new URL(startUrl);
       String pageContent = getPageContent(url);
       if (pageContent != null) {
-        printLinks(pageContent);
-        //System.out.println(pageContent);
+        printLinks(pageContent, startUrl);
+        // System.out.println(pageContent);
       }
     } catch (MalformedURLException e) {
       System.out.println("Invalid start Url passed.");
@@ -56,25 +56,22 @@ public class WebScraper {
     return null;
   }
 
-  private static void printLinks(String page) {
+  private static void printLinks(String page, String currentUrl) {
     // split lines with ">"
     // search for <a start and then find href=....
     // put url in list and set if unique and printed++
     String[] lines = page.split(">");
     Pattern linkPattern = Pattern.compile(".*<a.+href=\"([^\\\"]+)\"");
-    for(String line : lines) {
+    for (String line : lines) {
       if (urlListSize > MAX_URLS) {
         break;
       }
-      //todo: replace check with pattern matcher
-      if (line.matches(".*<a.+href=\"([^\\\"]+)\".*")) {
+      Matcher linkMatcher = linkPattern.matcher(line);
+      if (linkMatcher.find()) {
+        // add and do stuff
 
-        Matcher linkMatcher = linkPattern.matcher(line);
-        linkMatcher.find();
-        System.out.println(linkMatcher.group(1));
+        System.out.println(Utils.fixRelativeUrls(linkMatcher.group(1),currentUrl));
       }
-
-
     }
   }
 }
