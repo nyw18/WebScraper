@@ -10,7 +10,8 @@ public class WebScraper {
 
   private static final int MAX_URLS = 100;
   private static int urlListSize;
-  private static Set<String> urlSet;
+  private static Set<String> accessedUrlSet;
+  private static Set<String> unaccessedUrlSet;
   private static List<String> searchList;
 
   public static void main(String[] args) {
@@ -24,24 +25,31 @@ public class WebScraper {
     // --get next from searchList and get more urls
     // while end
     // print first MAX_URLS urls
-
-    try {
-      String startUrl = args[0];
-      URL url = new URL(startUrl);
-      String pageContent = getPageContent(url);
-      if (pageContent != null) {
-        printLinks(pageContent, startUrl);
-        // System.out.println(pageContent);
+    while (!unaccessedUrlSet.isEmpty() && urlListSize < MAX_URLS) {
+      String currentUrlString = getNextUrl();
+      try {
+        URL currentUrl = new URL(currentUrlString);
+        String pageContent = getPageContent(currentUrl);
+        if (pageContent != null) {
+          getLinks(pageContent, currentUrlString);
+        }
+      } catch (MalformedURLException e) {
+        System.out.println("Attempted access to invalid url" + currentUrlString);
       }
-    } catch (MalformedURLException e) {
-      System.out.println("Invalid start Url passed.");
     }
   }
 
+  private static String getNextUrl() {
+    String nextUrl = unaccessedUrlSet.iterator().next();
+    unaccessedUrlSet.remove(nextUrl);
+    accessedUrlSet.add(nextUrl);
+    return nextUrl;
+  }
+
   private static void init(String url) {
-    urlSet = new HashSet<>();
-    searchList = new ArrayList<>();
-    searchList.add(url);
+    accessedUrlSet = new HashSet<>();
+    unaccessedUrlSet = new HashSet<>();
+    unaccessedUrlSet.add(url);
     urlListSize = 0;
   }
 
@@ -51,14 +59,12 @@ public class WebScraper {
       Scanner pageScanner = new Scanner(htmlPage.getInputStream());
       return Utils.scannerToString(pageScanner);
     } catch (IOException e) {
-      System.out.println("Error getting page content.");
+      System.out.println("Error getting page content of url:" + url.getPath());
     }
     return null;
   }
 
-  private static void printLinks(String page, String currentUrl) {
-    // split lines with ">"
-    // search for <a start and then find href=....
+  private static void getLinks(String page, String currentUrl) {
     // put url in list and set if unique and printed++
     String[] lines = page.split(">");
     Pattern linkPattern = Pattern.compile(".*<a.+href=\"([^\\\"]+)\"");
@@ -68,9 +74,12 @@ public class WebScraper {
       }
       Matcher linkMatcher = linkPattern.matcher(line);
       if (linkMatcher.find()) {
-        // add and do stuff
-
-        System.out.println(Utils.fixRelativeUrls(linkMatcher.group(1),currentUrl));
+        String thisUrl = Utils.fixRelativeUrls(linkMatcher.group(1), currentUrl);
+        if (!unaccessedUrlSet.contains(thisUrl) && !accessedUrlSet.contains(thisUrl)) {
+          unaccessedUrlSet.add(thisUrl);
+          urlListSize++;
+          System.out.println(thisUrl);
+        }
       }
     }
   }
