@@ -1,4 +1,6 @@
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class Utils {
 
@@ -11,16 +13,26 @@ class Utils {
   }
 
   static String fixRelativeUrls(String url, String currentPage) {
-    assert(url.length() > 0);
+    assert (url.length() > 0);
     if (!url.startsWith("http")) {
-      // remove front slash to prevent double slash in url
-      if (!url.startsWith("/") && !currentPage.endsWith("/")) {
-        url = "/" + url;
-      } else if (url.startsWith("/")) {
-        //todo:get root url (root domain regex:http.:\/\/.+[\/])
-        url = url.substring(1);
+      if (!url.contains(":")) {
+        // modify urls as necessary
+        if (!url.startsWith("/") && !currentPage.endsWith("/")) {
+          // relative url from current page
+          url = currentPage + "/" + url;
+        } else if (url.startsWith("/")) {
+          // relative url from root
+          Pattern rootPattern = Pattern.compile("(https?:\\/\\/[^\\/\\n]+)");
+          Matcher rootMatcher = rootPattern.matcher(currentPage);
+          rootMatcher.find();
+          String rootUrl = rootMatcher.group(1);
+          url = rootUrl + url;
+        } else {
+          url = currentPage + url;
+        }
+      } else {
+        return null;
       }
-      url = currentPage + url;
     }
     return url;
   }

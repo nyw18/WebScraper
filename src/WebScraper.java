@@ -59,7 +59,7 @@ public class WebScraper {
       Scanner pageScanner = new Scanner(htmlPage.getInputStream());
       return Utils.scannerToString(pageScanner);
     } catch (IOException e) {
-      System.out.println("Error getting page content of url:" + url.getPath());
+      System.out.println("Error getting page content of url:" + url.toString());
     }
     return null;
   }
@@ -75,7 +75,7 @@ public class WebScraper {
       Matcher linkMatcher = linkPattern.matcher(line);
       if (linkMatcher.find()) {
         String thisUrl = Utils.fixRelativeUrls(linkMatcher.group(1), currentUrl);
-        if (!unaccessedUrlSet.contains(thisUrl) && !accessedUrlSet.contains(thisUrl)) {
+        if (thisUrl != null && !unaccessedUrlSet.contains(thisUrl) && !accessedUrlSet.contains(thisUrl)) {
           unaccessedUrlSet.add(thisUrl);
           urlListSize++;
           System.out.println(thisUrl);
