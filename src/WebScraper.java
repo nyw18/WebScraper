@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class WebScraper {
+class WebScraper {
 
   private static final int MAX_URLS = 100;
   private static int urlListSize;
@@ -17,14 +17,10 @@ public class WebScraper {
   public static void main(String[] args) {
     // check args are valid
     if (args.length != 1) {
-      System.out.println("Wrong number of parameters.");
+      System.out.println("This program only takes 1 parameter (the starting url),");
       return;
     }
     init(args[0]);
-    // while searchList != empty and set < MAX_URLS
-    // --get next from searchList and get more urls
-    // while end
-    // print first MAX_URLS urls
     while (!unaccessedUrlSet.isEmpty() && urlListSize < MAX_URLS) {
       String currentUrlString = getNextUrl();
       try {
@@ -39,6 +35,7 @@ public class WebScraper {
     }
   }
 
+  // Return a url from the unaccessedUrlSet adn then place it in the accessed set
   private static String getNextUrl() {
     String nextUrl = unaccessedUrlSet.iterator().next();
     unaccessedUrlSet.remove(nextUrl);
@@ -46,13 +43,15 @@ public class WebScraper {
     return nextUrl;
   }
 
+  // Set everything up with the passed in url as the first url to visit
   private static void init(String url) {
     accessedUrlSet = new HashSet<>();
     unaccessedUrlSet = new HashSet<>();
     unaccessedUrlSet.add(url);
-    urlListSize = 0;
+    urlListSize = 1;
   }
 
+  // Return a string containing the html of a page or null if an error is encountered
   private static String getPageContent(URL url) {
     try {
       URLConnection htmlPage = url.openConnection();
@@ -64,18 +63,24 @@ public class WebScraper {
     return null;
   }
 
-  private static void getLinks(String page, String currentUrl) {
-    // put url in list and set if unique and printed++
-    String[] lines = page.split(">");
+  // Store the links into the url sets and print if necessary
+  private static void getLinks(String pageHtml, String currentUrl) {
+    // split up the html passed into lines by >
+    String[] lines = pageHtml.split(">");
+    // match text after "<a" and "href=", which is a link
     Pattern linkPattern = Pattern.compile(".*<a.+href=\"([^\\\"]+)\"");
     for (String line : lines) {
+      // only print MAX_URLS number of urls
       if (urlListSize > MAX_URLS) {
         break;
       }
       Matcher linkMatcher = linkPattern.matcher(line);
+      // add each matching line to the unaccessed url set if on neither set
       if (linkMatcher.find()) {
         String thisUrl = Utils.fixRelativeUrls(linkMatcher.group(1), currentUrl);
-        if (thisUrl != null && !unaccessedUrlSet.contains(thisUrl) && !accessedUrlSet.contains(thisUrl)) {
+        if (thisUrl != null
+            && !unaccessedUrlSet.contains(thisUrl)
+            && !accessedUrlSet.contains(thisUrl)) {
           unaccessedUrlSet.add(thisUrl);
           urlListSize++;
           System.out.println(thisUrl);
